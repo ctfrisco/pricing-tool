@@ -184,8 +184,11 @@ function App() {
     socRate = 6;
   }
   
+  // Check if security bundle is selected to include SOC costs
+  const isSecurityBundle = selectedBundle === 'enterpriseSecurity' || selectedBundle === 'enterpriseComplete';
+  
   const rmmCost = totalDevices * rmmRate;
-  const socCost = totalDevices * socRate;
+  const socCost = isSecurityBundle ? totalDevices * socRate : 0;
   
   const baseToolingCost = rmmCost + socCost;
   const discountedToolingCost = baseToolingCost * (1 - bundleDiscount);
@@ -626,10 +629,14 @@ function App() {
                           <span className="text-gray-600">RMM ({formatCurrency(rmmRate)}/device):</span>
                           <span className="font-medium">{formatCurrency(rmmCost)}/month</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">SOC ({formatCurrency(socRate)}/device):</span>
-                          <span className="font-medium">{formatCurrency(socCost)}/month</span>
-                        </div>
+                        
+                        {isSecurityBundle && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">SOC ({formatCurrency(socRate)}/device):</span>
+                            <span className="font-medium">{formatCurrency(socCost)}/month</span>
+                          </div>
+                        )}
+                        
                         <div className="flex justify-between">
                           <span className="text-gray-600">Base Tooling Cost:</span>
                           <span className="font-medium">{formatCurrency(baseToolingCost)}/month</span>
