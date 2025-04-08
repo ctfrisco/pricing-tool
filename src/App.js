@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 function App() {
   // Input state
@@ -13,18 +13,12 @@ function App() {
   const [contractTerm, setContractTerm] = useState('1year');
   const [paymentFrequency, setPaymentFrequency] = useState('monthly');
   const [selectedBundle, setSelectedBundle] = useState('none');
-  // NEW: Usage Factor state for the consumption-based component
+  // Usage Factor state for the consumption-based component
   const [usageFactor, setUsageFactor] = useState(1.0);
-
-  // Industry comparison state
-  const [showComparison, setShowComparison] = useState(false);
-  const [comparisonInputs, setComparisonInputs] = useState({
-    itStaffCount: 5,
-    averageSalary: 85000,
-    benefits: 30,
-    overhead: 20,
-    competitorPrice: 85
-  });
+  // Partner gross margin
+  const [partnerMargin, setPartnerMargin] = useState(20);
+  // Custom discount field
+  const [customDiscount, setCustomDiscount] = useState(0);
   
   // Calculate total devices
   const totalDevices = 
@@ -124,6 +118,9 @@ function App() {
       appliedBundle = "";
   }
   
+  // Custom discount (as a decimal)
+  const customDiscountDecimal = customDiscount / 100;
+  
   // Calculate labor hours with adjusted hour rates based on the new tier structure
   let workstationHourRate, serverHourRate, networkHourRate;
   if (tier === "Tier 1") {
@@ -193,104 +190,21 @@ function App() {
   const baseToolingCost = rmmCost + socCost;
   const discountedToolingCost = baseToolingCost * (1 - bundleDiscount);
   
-  // NEW: Hybrid Pricing Model: Combine a fixed fee (tooling cost) with a consumption-based component (labor cost scaled by usageFactor)
+  // Hybrid Pricing Model: Combine a fixed fee (tooling cost) with a consumption-based component (labor cost scaled by usageFactor)
   const hybridBaseCost = discountedToolingCost + (laborCost * usageFactor);
   const withProfitMargin = hybridBaseCost / (1 - profitMargin);
   const withContractDiscount = withProfitMargin * (1 - contractDiscount);
-  const finalMonthlyCost = withContractDiscount * (1 - paymentDiscount);
-  const annualCost = finalMonthlyCost * 12;
-  const perDeviceCost = finalMonthlyCost / totalDevices;
-
-  // Handle comparison input changes
-  const handleComparisonChange = (e) => {
-    const { name, value } = e.target;
-    setComparisonInputs({
-      ...comparisonInputs,
-      [name]: parseFloat(value)
-    });
-  };
-
-  // Calculate in-house IT costs
-  const calculateInHouseCosts = () => {
-    const { itStaffCount, averageSalary, benefits, overhead } = comparisonInputs;
-    
-    const annualSalaryCost = itStaffCount * averageSalary;
-    const benefitsCost = annualSalaryCost * (benefits / 100);
-    const overheadCost = annualSalaryCost * (overhead / 100);
-    const totalAnnualCost = annualSalaryCost + benefitsCost + overheadCost;
-    const monthlyCost = totalAnnualCost / 12;
-    const costPerDevice = totalDevices ? totalAnnualCost / 12 / totalDevices : 0;
-    
-    return {
-      annualCost: totalAnnualCost,
-      monthlyCost,
-      costPerDevice
-    };
-  };
-
-  // Calculate competitor MSP costs
-  const calculateCompetitorCosts = () => {
-    const { competitorPrice } = comparisonInputs;
-    
-    const monthlyCost = competitorPrice * totalDevices;
-    const annualCost = monthlyCost * 12;
-    
-    return {
-      annualCost,
-      monthlyCost,
-      costPerDevice: competitorPrice
-    };
-  };
-
-  // Calculate savings
-  const calculateComparativeSavings = () => {
-    const inHouseCosts = calculateInHouseCosts();
-    const competitorCosts = calculateCompetitorCosts();
-    
-    const inHouseSavings = {
-      monthly: inHouseCosts.monthlyCost - finalMonthlyCost,
-      annual: inHouseCosts.annualCost - annualCost,
-      percentage: inHouseCosts.monthlyCost ? ((inHouseCosts.monthlyCost - finalMonthlyCost) / inHouseCosts.monthlyCost) * 100 : 0
-    };
-    
-    const competitorSavings = {
-      monthly: competitorCosts.monthlyCost - finalMonthlyCost,
-      annual: competitorCosts.annualCost - annualCost,
-      percentage: competitorCosts.monthlyCost ? ((competitorCosts.monthlyCost - finalMonthlyCost) / competitorCosts.monthlyCost) * 100 : 0
-    };
-    
-    return {
-      inHouse: inHouseSavings,
-      competitor: competitorSavings
-    };
-  };
-
-  // Access the comparison data
-  const comparisonData = {
-    inHouse: calculateInHouseCosts(),
-    competitor: calculateCompetitorCosts(),
-    savings: calculateComparativeSavings()
-  };
+  const withPaymentDiscount = withContractDiscount * (1 - paymentDiscount);
   
-  // Auto-adjust staff count based on environment size
-  useEffect(() => {
-    let staffCount = 2; // default
-    
-    if (totalDevices > 500 && totalDevices <= 2000) {
-      staffCount = 5;
-    } else if (totalDevices > 2000 && totalDevices <= 5000) {
-      staffCount = 12;
-    } else if (totalDevices > 5000 && totalDevices <= 10000) {
-      staffCount = 25;
-    } else if (totalDevices > 10000) {
-      staffCount = Math.ceil(totalDevices / 350); // Approximate 1:350 ratio
-    }
-    
-    setComparisonInputs(prev => ({
-      ...prev,
-      itStaffCount: staffCount
-    }));
-  }, [totalDevices]);
+  // Apply custom discount
+  const finalMonthlyCost = withPaymentDiscount * (1 - customDiscountDecimal);
+  
+  // Apply partner gross margin
+  const partnerMarginMultiplier = 1 + (partnerMargin / 100);
+  const finalPriceWithPartnerMargin = finalMonthlyCost * partnerMarginMultiplier;
+  
+  const annualCost = finalPriceWithPartnerMargin * 12;
+  const perDeviceCost = finalPriceWithPartnerMargin / totalDevices;
   
   // Handle input changes
   const handleDeviceChange = (e) => {
@@ -463,7 +377,7 @@ function App() {
                     </select>
                   </div>
                   
-                  {/* NEW: Usage Factor input for flexible, consumption-based pricing */}
+                  {/* Usage Factor input for flexible, consumption-based pricing */}
                   <div>
                     <label htmlFor="usageFactor" className="block text-sm font-medium text-gray-700 mb-1">
                       Usage Factor (Consumption-Based)
@@ -478,6 +392,46 @@ function App() {
                       step="0.1"
                       className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     />
+                  </div>
+                  
+                  {/* Partner Gross Margin field */}
+                  <div>
+                    <label htmlFor="partnerMargin" className="block text-sm font-medium text-gray-700 mb-1">
+                      Partner Gross Margin (%)
+                    </label>
+                    <input
+                      type="number"
+                      id="partnerMargin"
+                      name="partnerMargin"
+                      value={partnerMargin}
+                      onChange={(e) => setPartnerMargin(parseFloat(e.target.value))}
+                      min="0"
+                      step="1"
+                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  {/* Custom Discount field */}
+                  <div>
+                    <label htmlFor="customDiscount" className="block text-sm font-medium text-gray-700 mb-1">
+                      Custom Discount (%)
+                    </label>
+                    <input
+                      type="number"
+                      id="customDiscount"
+                      name="customDiscount"
+                      value={customDiscount}
+                      onChange={(e) => setCustomDiscount(parseFloat(e.target.value))}
+                      min="0"
+                      max="100"
+                      step="1"
+                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    {customDiscount > 0 && (
+                      <div className="mt-1 text-sm text-green-600">
+                        {customDiscount}% custom discount applied
+                      </div>
+                    )}
                   </div>
                   
                   <div>
@@ -525,7 +479,7 @@ function App() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                   <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
                     <div className="text-sm text-blue-800 font-medium">Monthly Price</div>
-                    <div className="text-3xl font-bold text-blue-900 mt-1">{formatCurrency(finalMonthlyCost)}</div>
+                    <div className="text-3xl font-bold text-blue-900 mt-1">{formatCurrency(finalPriceWithPartnerMargin)}</div>
                   </div>
                   
                   <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
@@ -539,354 +493,63 @@ function App() {
                   </div>
                 </div>
                 
-                {/* Environment details & cost factors */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-3 pb-2 border-b border-gray-200">Environment Details</h3>
-                    <div className="grid grid-cols-2 gap-y-2 text-sm">
-                      <div className="text-gray-600">Total Devices:</div>
-                      <div className="font-medium text-right">{totalDevices.toLocaleString()}</div>
-                      
-                      <div className="text-gray-600">Service Level:</div>
-                      <div className="font-medium text-right">
-                        {serviceLevel === 'monitorOnly' && 'Monitor Only'}
-                        {serviceLevel === 'monitorBasic' && 'Monitor + Basic'}
-                        {serviceLevel === 'monitorRemediation' && 'Monitor + Remediation'}
-                        {serviceLevel === 'advancedManagement' && 'Advanced Management'}
-                        {serviceLevel === 'fullyManaged' && 'Fully Managed'}
-                      </div>
-                      
-                      <div className="text-gray-600">Contract Term:</div>
-                      <div className="font-medium text-right">
-                        {contractTerm === '1year' && '1 Year'}
-                        {contractTerm === '2year' && '2 Years'}
-                        {contractTerm === '3year' && '3 Years'}
-                      </div>
-                      
-                      <div className="text-gray-600">Payment:</div>
-                      <div className="font-medium text-right capitalize">{paymentFrequency}</div>
-                      
-                      <div className="text-gray-600">Bundle:</div>
-                      <div className="font-medium text-right">{appliedBundle || 'None'}</div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-3 pb-2 border-b border-gray-200">Cost Factors</h3>
-                    <div className="grid grid-cols-2 gap-y-2 text-sm">
-                      <div className="text-gray-600">Efficiency Factor:</div>
-                      <div className="font-medium text-right">{formatPercentage(efficiencyFactor * 100)}</div>
-                      
-                      <div className="text-gray-600">Service Level Impact:</div>
-                      <div className="font-medium text-right">{formatPercentage((serviceLevelMultiplier - 1) * 100)}</div>
-                      
-                      <div className="text-gray-600">Contract Discount:</div>
-                      <div className="font-medium text-right">{formatPercentage(contractDiscount * 100)}</div>
-                      
-                      <div className="text-gray-600">Payment Discount:</div>
-                      <div className="font-medium text-right">{formatPercentage(paymentDiscount * 100)}</div>
-                      
-                      <div className="text-gray-600">Bundle Discount:</div>
-                      <div className="font-medium text-right">{formatPercentage(bundleDiscount * 100)}</div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Cost breakdown section */}
-                <div className="mb-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-3 pb-2 border-b border-gray-200">Cost Breakdown</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                      <h4 className="font-medium text-gray-900 mb-2">Labor Costs</h4>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Service Hours:</span>
-                          <span className="font-medium">{totalServiceHours.toFixed(1)} hours/month</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Offshore ({formatPercentage(offshorePercentage * 100)}):</span>
-                          <span className="font-medium">{offshoreHours.toFixed(1)} hours</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">US-Based ({formatPercentage(usBasedPercentage * 100)}):</span>
-                          <span className="font-medium">{usBasedHours.toFixed(1)} hours</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Architect ({formatPercentage(architectPercentage * 100)}):</span>
-                          <span className="font-medium">{architectHours.toFixed(1)} hours</span>
-                        </div>
-                        <div className="pt-1 border-t border-gray-200 flex justify-between font-semibold">
-                          <span>Total Labor Cost:</span>
-                          <span>{formatCurrency(laborCost)}/month</span>
-                        </div>
-                      </div>
+                {/* Environment details only */}
+                <div className="mb-8">
+                  <h3 className="text-lg font-medium text-gray-900 mb-3 pb-2 border-b border-gray-200">Environment Details</h3>
+                  <div className="grid grid-cols-2 gap-y-2 text-sm">
+                    <div className="text-gray-600">Total Devices:</div>
+                    <div className="font-medium text-right">{totalDevices.toLocaleString()}</div>
+                    
+                    <div className="text-gray-600">Service Level:</div>
+                    <div className="font-medium text-right">
+                      {serviceLevel === 'monitorOnly' && 'Monitor Only'}
+                      {serviceLevel === 'monitorBasic' && 'Monitor + Basic'}
+                      {serviceLevel === 'monitorRemediation' && 'Monitor + Remediation'}
+                      {serviceLevel === 'advancedManagement' && 'Advanced Management'}
+                      {serviceLevel === 'fullyManaged' && 'Fully Managed'}
                     </div>
                     
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                      <h4 className="font-medium text-gray-900 mb-2">Tooling Costs</h4>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">RMM ({formatCurrency(rmmRate)}/device):</span>
-                          <span className="font-medium">{formatCurrency(rmmCost)}/month</span>
-                        </div>
-                        
-                        {isSecurityBundle && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">SOC ({formatCurrency(socRate)}/device):</span>
-                            <span className="font-medium">{formatCurrency(socCost)}/month</span>
-                          </div>
-                        )}
-                        
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Base Tooling Cost:</span>
-                          <span className="font-medium">{formatCurrency(baseToolingCost)}/month</span>
-                        </div>
-                        {bundleDiscount > 0 && (
-                          <div className="flex justify-between text-green-700">
-                            <span>Bundle Discount:</span>
-                            <span>-{formatPercentage(bundleDiscount * 100)}</span>
-                          </div>
-                        )}
-                        <div className="pt-1 border-t border-gray-200 flex justify-between font-semibold">
-                          <span>Final Tooling Cost:</span>
-                          <span>{formatCurrency(discountedToolingCost)}/month</span>
-                        </div>
-                      </div>
+                    <div className="text-gray-600">Contract Term:</div>
+                    <div className="font-medium text-right">
+                      {contractTerm === '1year' && '1 Year'}
+                      {contractTerm === '2year' && '2 Years'}
+                      {contractTerm === '3year' && '3 Years'}
                     </div>
+                    
+                    <div className="text-gray-600">Payment:</div>
+                    <div className="font-medium text-right capitalize">{paymentFrequency}</div>
+                    
+                    <div className="text-gray-600">Bundle:</div>
+                    <div className="font-medium text-right">{appliedBundle || 'None'}</div>
+                    
+                    {customDiscount > 0 && (
+                      <>
+                        <div className="text-gray-600">Custom Discount:</div>
+                        <div className="font-medium text-right text-green-600">{customDiscount}%</div>
+                      </>
+                    )}
                   </div>
                 </div>
                 
-                {/* Profitability metrics */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                    <h4 className="font-medium text-blue-900 mb-2">Base Cost Information</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-blue-700">Base Cost (Fixed + Consumption):</span>
-                        <span className="font-medium">{formatCurrency(hybridBaseCost)}/month</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-blue-700">Profit Margin:</span>
-                        <span className="font-medium">{formatPercentage(profitMargin * 100)}</span>
-                      </div>
-                      <div className="flex justify-between font-semibold">
-                        <span>With Margin:</span>
-                        <span>{formatCurrency(withProfitMargin)}/month</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                    <h4 className="font-medium text-blue-900 mb-2">Discount Information</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-blue-700">Contract Discount:</span>
-                        <span className="font-medium">-{formatPercentage(contractDiscount * 100)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-blue-700">Payment Discount:</span>
-                        <span className="font-medium">-{formatPercentage(paymentDiscount * 100)}</span>
-                      </div>
-                      <div className="flex justify-between font-semibold">
-                        <span>Final Price:</span>
-                        <span>{formatCurrency(finalMonthlyCost)}/month</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Industry Comparison Section */}
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="bg-blue-800 text-white px-6 py-4 flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Industry Comparison</h2>
-                <button 
-                  onClick={() => setShowComparison(!showComparison)} 
-                  className="bg-white text-blue-800 hover:bg-blue-100 px-3 py-1 rounded text-sm font-medium transition-colors"
-                >
-                  {showComparison ? 'Hide Details' : 'Show Details'}
-                </button>
-              </div>
-              
-              <div className="p-6">
-                {/* Comparison settings */}
-                {showComparison && (
-                  <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <h3 className="text-lg font-medium text-gray-900 mb-3">Comparison Settings</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div>
-                        <label htmlFor="itStaffCount" className="block text-sm font-medium text-gray-700 mb-1">
-                          IT Staff Count
-                        </label>
-                        <input
-                          type="number"
-                          id="itStaffCount"
-                          name="itStaffCount"
-                          value={comparisonInputs.itStaffCount}
-                          onChange={handleComparisonChange}
-                          min="1"
-                          className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label htmlFor="averageSalary" className="block text-sm font-medium text-gray-700 mb-1">
-                          Average IT Salary ($)
-                        </label>
-                        <input
-                          type="number"
-                          id="averageSalary"
-                          name="averageSalary"
-                          value={comparisonInputs.averageSalary}
-                          onChange={handleComparisonChange}
-                          min="0"
-                          className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label htmlFor="benefits" className="block text-sm font-medium text-gray-700 mb-1">
-                          Benefits (% of Salary)
-                        </label>
-                        <input
-                          type="number"
-                          id="benefits"
-                          name="benefits"
-                          value={comparisonInputs.benefits}
-                          onChange={handleComparisonChange}
-                          min="0"
-                          max="100"
-                          className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label htmlFor="overhead" className="block text-sm font-medium text-gray-700 mb-1">
-                          Overhead (% of Salary)
-                        </label>
-                        <input
-                          type="number"
-                          id="overhead"
-                          name="overhead"
-                          value={comparisonInputs.overhead}
-                          onChange={handleComparisonChange}
-                          min="0"
-                          max="100"
-                          className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label htmlFor="competitorPrice" className="block text-sm font-medium text-gray-700 mb-1">
-                          Competitor Price ($/device)
-                        </label>
-                        <input
-                          type="number"
-                          id="competitorPrice"
-                          name="competitorPrice"
-                          value={comparisonInputs.competitorPrice}
-                          onChange={handleComparisonChange}
-                          min="0"
-                          className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Comparison costs & savings */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
-                    <h3 className="font-semibold text-blue-900 mb-2">Our Pricing</h3>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-700">Monthly:</span>
-                        <span className="font-medium">{formatCurrency(finalMonthlyCost)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-700">Annual:</span>
-                        <span className="font-medium">{formatCurrency(annualCost)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-700">Per Device:</span>
-                        <span className="font-medium">{formatCurrency(perDeviceCost)}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h3 className="font-semibold text-gray-900 mb-2">In-House IT Cost</h3>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-700">Monthly:</span>
-                        <span className="font-medium">{formatCurrency(comparisonData.inHouse.monthlyCost)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-700">Annual:</span>
-                        <span className="font-medium">{formatCurrency(comparisonData.inHouse.annualCost)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-700">Per Device:</span>
-                        <span className="font-medium">{formatCurrency(comparisonData.inHouse.costPerDevice)}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h3 className="font-semibold text-gray-900 mb-2">Competitor MSP Cost</h3>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-700">Monthly:</span>
-                        <span className="font-medium">{formatCurrency(comparisonData.competitor.monthlyCost)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-700">Annual:</span>
-                        <span className="font-medium">{formatCurrency(comparisonData.competitor.annualCost)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-700">Per Device:</span>
-                        <span className="font-medium">{formatCurrency(comparisonData.competitor.costPerDevice)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Savings section */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
-                    <h3 className="font-semibold text-green-800 mb-2">Savings vs. In-House IT</h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-700">Monthly Savings:</span>
-                        <span className="font-medium">{formatCurrency(comparisonData.savings.inHouse.monthly)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-700">Annual Savings:</span>
-                        <span className="font-medium">{formatCurrency(comparisonData.savings.inHouse.annual)}</span>
-                      </div>
-                      <div className="flex justify-between font-semibold text-green-700 mt-1 pt-1 border-t border-green-200">
-                        <span>Percentage Savings:</span>
-                        <span>{formatPercentage(comparisonData.savings.inHouse.percentage)}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
-                    <h3 className="font-semibold text-green-800 mb-2">Savings vs. Competitor MSP</h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-700">Monthly Savings:</span>
-                        <span className="font-medium">{formatCurrency(comparisonData.savings.competitor.monthly)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-700">Annual Savings:</span>
-                        <span className="font-medium">{formatCurrency(comparisonData.savings.competitor.annual)}</span>
-                      </div>
-                      <div className="flex justify-between font-semibold text-green-700 mt-1 pt-1 border-t border-green-200">
-                        <span>Percentage Savings:</span>
-                        <span>{formatPercentage(comparisonData.savings.competitor.percentage)}</span>
-                      </div>
+                {/* Added Discounts Summary Section */}
+                <div className="mb-8">
+                  <h3 className="text-lg font-medium text-gray-900 mb-3 pb-2 border-b border-gray-200">Applied Discounts</h3>
+                  <div className="grid grid-cols-2 gap-y-2 text-sm">
+                    <div className="text-gray-600">Contract Term Discount:</div>
+                    <div className="font-medium text-right">{formatPercentage(contractDiscount * 100)}</div>
+                    
+                    <div className="text-gray-600">Payment Frequency Discount:</div>
+                    <div className="font-medium text-right">{formatPercentage(paymentDiscount * 100)}</div>
+                    
+                    <div className="text-gray-600">Bundle Discount:</div>
+                    <div className="font-medium text-right">{formatPercentage(bundleDiscount * 100)}</div>
+                    
+                    <div className="text-gray-600">Custom Discount:</div>
+                    <div className="font-medium text-right">{formatPercentage(customDiscount)}</div>
+                    
+                    <div className="text-gray-600 font-medium pt-2">Total Effective Discount:</div>
+                    <div className="font-medium text-right pt-2 text-green-600">
+                      {formatPercentage((1 - (1-contractDiscount) * (1-paymentDiscount) * (1-bundleDiscount) * (1-customDiscountDecimal)) * 100)}
                     </div>
                   </div>
                 </div>
