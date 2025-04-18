@@ -1,0 +1,13 @@
+{
+  "routes": [
+    {
+      "route": "/index.html",
+      "methods": [
+        "get"
+      ],
+      "allowedRoles": [
+        "authenticated"
+      ]
+    }
+  ]
+}
