@@ -1,26 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import UserInfo from './components/UserInfo';
+
 function App() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    fetch('/.auth/me')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.clientPrincipal) {
-          setUser(data.clientPrincipal);
-        }
-      });
-  }, []);
-
-  const login = () => {
-    window.location.href = '/.auth/login/aad';
-  };
-
-  const logout = () => {
-    window.location.href = '/.auth/logout';
-  };
-
   // Input state
   const [devices, setDevices] = useState({
     workstations: 1000,
@@ -28,15 +9,13 @@ function App() {
     virtualServers: 50,
     networkDevices: 50
   });
-  
+
   const [serviceLevel, setServiceLevel] = useState('fullyManaged');
   const [contractTerm, setContractTerm] = useState('1year');
   const [paymentFrequency, setPaymentFrequency] = useState('monthly');
   const [selectedBundle, setSelectedBundle] = useState('none');
-  // NEW: Usage Factor state for the consumption-based component
   const [usageFactor, setUsageFactor] = useState(1.0);
 
-  // Industry comparison state
   const [showComparison, setShowComparison] = useState(false);
   const [comparisonInputs, setComparisonInputs] = useState({
     itStaffCount: 5,
@@ -45,7 +24,7 @@ function App() {
     overhead: 20,
     competitorPrice: 85
   });
-  
+
   // Calculate total devices
   const totalDevices = 
     parseInt(devices.workstations || 0) + 
