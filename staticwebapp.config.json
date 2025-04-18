@@ -1,10 +1,11 @@
 {
   "routes": [
     {
-      "route": "/index.html",
+      "route": "/",
       "methods": [
         "get"
       ],
+      "redirect": "/.auth/login/aad",
       "allowedRoles": [
         "authenticated"
       ]
