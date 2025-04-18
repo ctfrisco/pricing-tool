@@ -1,11 +1,15 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
+import React from 'react';
+import ReactDOM from 'react-dom';
+import './index.css';
+import ProtectedApp from './components/ProtectedApp';
+import AuthProvider from './components/AuthProvider';
+
+ReactDOM.render(
   <React.StrictMode>
-    <App />
-  </React.StrictMode>
+    <AuthProvider>
+      <ProtectedApp />
+    </AuthProvider>
+  </React.StrictMode>,
+  document.getElementById('root')
 );
