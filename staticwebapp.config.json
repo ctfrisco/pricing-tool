@@ -6,6 +6,17 @@
         "get"
       ],
       "redirect": "/.auth/login/aad"
+    },
+    {
+      "route": "/",
+      "methods": [
+        "get"
+      ],
+      "rewrite": "/index.html",
+      "allowedRoles": [
+        "authenticated",
+        "contributor"
+      ]
     }
   ]
 }
