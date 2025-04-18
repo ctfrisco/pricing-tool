@@ -2,7 +2,7 @@
 
 export const msalConfig = {
     auth: {
-      clientId: "YOUR_CLIENT_ID", // Replace with your Application (client) ID
+      clientId: "2c5c0cc5-68db-40b0-8ad2-d7970e042921", // Replace with your Application (client) ID
       authority: "https://login.microsoftonline.com/common", // Use 'common' for multi-tenant apps
       redirectUri: window.location.origin, // Uses the current site URL as the redirect URI
     },
