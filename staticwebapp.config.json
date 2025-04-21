@@ -2,18 +2,24 @@
   "routes": [
     {
       "route": "/",
-      "methods": ["GET"],
-      "allowedRoles": ["authenticated", "contributor"],
+      "methods": [
+        "get"
+      ],
       "rewrite": "/index.html"
     },
     {
       "route": "/.auth/login/aad",
-      "methods": ["GET"],
+      "methods": [
+        "GET"
+      ],
       "redirect": "/.auth/login/aad"
     }
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/api/*", "/.auth/*"]
+    "exclude": [
+      "/api/*",
+      "/.auth/*"
+    ]
   }
 }
