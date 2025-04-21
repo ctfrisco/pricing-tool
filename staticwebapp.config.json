@@ -1,16 +1,4 @@
 {
-  "routes": [
-    {
-      "route": "/.auth/login/aad",
-      "methods": [
-        "get"
-      ],
-      "redirect": "/index.html",
-      "allowedRoles": [
-        "authenticated"
-      ]
-    }
-  ],
   "navigationFallback": {
     "rewrite": "/index.html",
     "exclude": [
