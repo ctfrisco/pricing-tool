@@ -1,13 +1,6 @@
 {
   "routes": [
     {
-      "route": "/",
-      "methods": [
-        "get"
-      ],
-      "rewrite": "/index.html"
-    },
-    {
       "route": "/.auth/login/aad",
       "methods": [
         "get"
