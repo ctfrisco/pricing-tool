@@ -1,19 +1,29 @@
 {
   "routes": [
     {
-      "route": "/",
-      "methods": ["GET"],
-      "allowedRoles": ["authenticated", "contributor"],
-      "rewrite": "/index.html"
+      "route": "/.auth/login/aad",
+      "methods": [
+        "get"
+      ],
+      "redirect": "/index.html",
+      "allowedRoles": [
+        "authenticated"
+      ]
     },
     {
-      "route": "/.auth/login/aad",
-      "methods": ["GET"],
-      "redirect": "/.auth/login/aad"
+      "route": "/.auth/login/aad/callback",
+      "methods": [
+        "get",
+        "post"
+      ],
+      "redirect": "/index.html"
     }
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/api/*", "/.auth/*"]
+    "exclude": [
+      "/api/*",
+      "/.auth/*"
+    ]
   }
 }
