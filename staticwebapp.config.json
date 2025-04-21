@@ -12,9 +12,9 @@
       "methods": [
         "get"
       ],
-      "redirect": "/.auth/login/aad",
+      "redirect": "/index.html",
       "allowedRoles": [
-        "anonymous"
+        "authenticated"
       ]
     },
     {
