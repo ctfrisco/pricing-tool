@@ -16,6 +16,14 @@
       "allowedRoles": [
         "anonymous"
       ]
+    },
+    {
+      "route": "/.auth/login/aad/callback",
+      "methods": [
+        "get",
+        "post"
+      ],
+      "redirect": "/index.html"
     }
   ],
   "navigationFallback": {
