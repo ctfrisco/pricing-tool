@@ -10,9 +10,12 @@
     {
       "route": "/.auth/login/aad",
       "methods": [
-        "GET"
+        "get"
       ],
-      "redirect": "/.auth/login/aad"
+      "redirect": "/.auth/login/aad",
+      "allowedRoles": [
+        "anonymous"
+      ]
     }
   ],
   "navigationFallback": {
