@@ -1,18 +1,15 @@
+
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { PublicClientApplication } from '@azure/msal-browser';
-import { MsalProvider } from '@azure/msal-react';
-import { msalConfig } from './authConfig';
-import ProtectedApp from './components/ProtectedApp';
 import './index.css';
-
-const msalInstance = new PublicClientApplication(msalConfig);
+import ProtectedApp from './components/ProtectedApp';
+import AuthProvider from './components/AuthProvider';
 
 ReactDOM.render(
   <React.StrictMode>
-    <MsalProvider instance={msalInstance}>
+    <AuthProvider>
       <ProtectedApp />
-    </MsalProvider>
+    </AuthProvider>
   </React.StrictMode>,
   document.getElementById('root')
 );
